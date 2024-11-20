@@ -420,6 +420,7 @@ SELECT COUNT(*) AS nombre_employes, service FROM employes GROUP BY service;
 
 -- Il est possible de mettre une condition sur un GROUP BY + agregations avec HAVING (ayant)
 -- Nombre d'employés par service, pour les services ayant strictement plus de 2 employés 
+SELECT COUNT(*), service FROM employes GROUP BY service HAVING COUNT(*) > 2;
 
 ------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------
@@ -477,23 +478,47 @@ DELETE FROM employes WHERE service = "informatique" AND id_employes != 701; -- S
 ------------------------------------------------------------------------------------------
 
 -- 1 -- Afficher la profession de l'employé 547.
+SELECT service FROM employes WHERE id_employes = 547;
 -- 2 -- Afficher la date d'embauche d'Amandine.	
+SELECT date_embauche FROM employes WHERE prenom = "Amandine";
 -- 3 -- Afficher le nom de famille de Guillaume	
+SELECT nom from employes WHERE prenom = "Guillaume";
 -- 4 -- Afficher le nombre de personne ayant un n° id_employes commençant par le chiffre 5.	
+SELECT COUNT(*) AS nombre_employes FROM employes WHERE id_employes LIKE "5%";
 -- 5 -- Afficher le nombre de commerciaux.
+SELECT COUNT(*) AS nom_commerciaux FROM employes WHERE service = "commercial";
 -- 6 -- Afficher le salaire moyen des informaticiens (+arrondie).	
+SELECT ROUND(AVG(salaire), 2) AS salaire_moyen_informaticien FROM employes WHERE service = "informatique";
 -- 7 -- Afficher les 5 premiers employés après avoir classé leur nom de famille par ordre alphabétique. 
+SELECT nom, prenom FROM employes ORDER BY nom ASC LIMIT 5;
 -- 8 -- Afficher le coût des commerciaux sur 1 année.	
+SELECT SUM(salaire * 12) AS salaire_annuel_comerciaux FROM employes WHERE service = "commercial";
 -- 9 -- Afficher le salaire moyen par service. (service + salaire moyen)
+SELECT service, ROUND(AVG(salaire)) AS salaire_moyen FROM employes GROUP BY service;
 -- 10 -- Afficher le nombre de recrutement sur l'année 2010 (+alias).	
+SELECT COUNT(*) AS nombre_recrutement_2010 FROM employes WHERE date_embauche LIKE "2010%";
+SELECT COUNT(*) AS nombre_recrutement_2010 FROM employes WHERE YEAR(date_embauche) = 2010;
 -- 11 -- Afficher le salaire moyen appliqué lors des recrutements sur la période allant de 2015 a 2017
+SELECT ROUND(AVG(salaire)) FROM employes WHERE date_embauche >= "2015-01-01" AND date_embauche <= "2017-12-31";
+SELECT ROUND(AVG(salaire)) FROM employes WHERE date_embauche BETWEEN "2015-01-01" AND "2017-12-31";
 -- 12 -- Afficher le nombre de service différent 
+SELECT COUNT(DISTINCT service) AS nombre_service_different FROM employes;
 -- 13 -- Afficher tous les employés (sauf ceux du service production et secrétariat)
+SELECT * FROM employes WHERE service NOT IN ("production", "secretariat");
 -- 14 -- Afficher conjointement le nombre d'homme et de femme dans l'entreprise
+SELECT COUNT(*) AS homme, (SELECT COUNT(*) FROM employes WHERE sexe = "f") AS femme FROM employes WHERE sexe = "m";
+SELECT sexe, COUNT(*) AS nombre FROM employes GROUP BY sexe;
 -- 15 -- Afficher les commerciaux ayant été recrutés avant 2012 de sexe masculin et gagnant un salaire supérieur a 2500 €
+SELECT * FROM employes WHERE service = "commercial" AND date_embauche < "2012-01-01" AND sexe = "m" AND salaire > 2500;
 -- 16 -- Qui a été embauché en dernier 
+SELECT * FROM employes ORDER BY date_embauche DESC LIMIT 1;
 -- 17 -- Afficher les informations sur l'employé du service commercial gagnant le salaire le plus élevé
+SELECT * FROM employes WHERE service = "commercial" ORDER BY salaire DESC LIMIT 1;
 -- 18 -- Afficher le prénom du comptable gagnant le meilleur salaire
+SELECT prenom FROM employes WHERE service = "comptabilite" ORDER BY salaire DESC LIMIT 1;
 -- 19 -- Afficher le prénom de l'informaticien ayant été recruté en premier 
+SELECT prenom FROM employes WHERE service = "informatique" ORDER BY date_embauche ASC LIMIT 1;
 -- 20 -- Augmenter chaque employé de 100 €
+UPDATE employes SET salaire = salaire + 100;
 -- 21 -- Supprimer les employés du service secrétariat
+DELETE FROM employes WHERE service = "secretariat";
