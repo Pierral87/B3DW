@@ -85,16 +85,57 @@ INSERT INTO `vehicule` (`id_vehicule`, `marque`, `modele`, `couleur`, `immatricu
     -- ATTENTION, chaque question est à prendre indépendamment de la suivante, car les contraintes ne sont pas toutes faisables en même temps 
 
 -- 1/ 	Pour éviter les erreurs, la société de taxis aimerait que l’on ne puisse pas faire une mauvaise association lors de la saisie.
+Le simple fait de créer les relations (index et contraintes de FK), permet de répondre à cette question 
 -- 2/	La société de taxis peut modifier leurs conducteurs via leur logiciel, lorsqu’un conducteur est modifié (dans la table conducteur - changement d’id), la société aimerait que la modification soit répercutée dans la table « association_vehicule_conducteur ».
+sur id_conducteur ON UPDATE CASCADE
 -- 3/	La société de taxis peut supprimer des conducteurs via leur logiciel, ils aimeraient bloquer la possibilité de supprimer un conducteur (dans la table conducteur) tant que celui-ci conduit un véhicule.
+sur id_conducteur ON DELETE RESTRICT 
 -- 4/	La société de taxis peut modifier un véhicule via leur logiciel. Lorsqu’un véhicule est modifié (dans la table véhicule - changement d’id), la société aimerait que la modification soit répercutée dans la table « association_vehicule_conducteur ».
+sur id_vehicule ON UPDATE CASCADE
 -- 5/	Si un véhicule est supprimé alors qu’un ou plusieurs conducteurs le conduisaient, la société aimerait garder la présence de ces conducteurs dans la table « association_vehicule_conducteur » en précisant « null » comme valeur dans le champ correspondant puisque le véhicule aura été supprimé.
+sur id_vehicule ON DELETE SET NULL
 
 -- 01 - Qui conduit la voiture 503 ? 
+SELECT c.prenom FROM conducteur c 
+JOIN association_vehicule_conducteur USING (id_conducteur)
+JOIN vehicule USING (id_vehicule)
+WHERE id_vehicule = 503;
 -- 02 - Quelle(s) voiture(s) est conduite par le conducteur 3 ? 
+SELECT vehicule.marque, vehicule.modele FROM vehicule 
+JOIN association_vehicule_conducteur ON vehicule.id_vehicule = association_vehicule_conducteur.id_vehicule 
+WHERE association_vehicule_conducteur.id_conducteur = 3;
 -- 03 - Qui conduit quoi ? (on veut les prenoms associés à un modele + marque)
+SELECT prenom, nom, modele, marque FROM conducteur 
+JOIN association_vehicule_conducteur USING (id_conducteur)
+JOIN vehicule USING (id_vehicule)
+ORDER BY prenom;
 -- 04 - Ajoutez vous dans la liste des conducteurs.
             -- Afficher tous les conducteurs (meme ceux qui n'ont pas de correspondance avec les vehicules) puis les vehicules qu'ils conduisent si c'est le cas
+SELECT prenom, nom, marque, modele FROM conducteur 
+LEFT JOIN association_vehicule_conducteur ON conducteur.id_conducteur = association_vehicule_conducteur.id_conducteur 
+LEFT JOIN vehicule ON association_vehicule_conducteur.id_vehicule = vehicule.id_vehicule;
 -- 05 - Ajoutez un nouvel enregistrement dans la table des véhicules.
         -- Afficher tous les véhicules (meme ceux qui n'ont pas de correspondance avec les conducteurs) puis les conducteurs si c'est le cas
+SELECT marque, modele, prenom, nom FROM vehicule 
+LEFT JOIN association_vehicule_conducteur ON association_vehicule_conducteur.id_vehicule = vehicule.id_vehicule 
+LEFT JOIN conducteur ON conducteur.id_conducteur = association_vehicule_conducteur.id_conducteur;
 -- 06 - Afficher tous les conducteurs et tous les vehicules, peu importe les correspondances.
+SELECT prenom, nom, marque modele FROM conducteur 
+LEFT JOIN association_vehicule_conducteur ON conducteur.id_conducteur = association_vehicule_conducteur.id_conducteur 
+LEFT JOIN vehicule ON association_vehicule_conducteur.id_vehicule = vehicule.id_vehicule
+UNION
+SELECT prenom, nom, marque modele FROM conducteur 
+RIGHT JOIN association_vehicule_conducteur ON conducteur.id_conducteur = association_vehicule_conducteur.id_conducteur 
+RIGHT JOIN vehicule ON association_vehicule_conducteur.id_vehicule = vehicule.id_vehicule
+ORDER BY prenom;
+
+
+-- La requête ci dessous pourrait fonctionner sauf après avoir supprimé un vehicule qui avait une association, on aura alors un NULL dans id_vehicule dans la table d'association (par rapport à la contrainte de la question 5), la valeur NULL sera alors ignorée du jeu de résultat
+SELECT c.prenom AS conducteur, v.modele AS modele, v.marque as marque 
+FROM conducteur c 
+LEFT JOIN association_vehicule_conducteur USING (id_conducteur)
+LEFT JOIN vehicule v USING (id_vehicule)
+UNION 
+SELECT NULL as conducteur, v.modele AS modele, v.marque as marque 
+FROM vehicule v 
+WHERE v.id_vehicule NOT IN (SELECT id_vehicule FROM association_vehicule_conducteur) ORDER BY conducteur;
