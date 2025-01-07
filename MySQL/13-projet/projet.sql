@@ -143,3 +143,154 @@ Réalisez les requêtes SQL suivantes :
 
 
 */
+
+
+/*
+
+SOLUTION : 
+
+Modelisation --- Voir image
+-----------------------------------------------------------------
+Contraintes : 
+
+1. User → Orders (relation 1:N)
+    Contrainte :
+        ON DELETE SET NULL : Si un utilisateur est supprimé, ses commandes restent dans le système pour traçabilité.
+        ON UPDATE CASCADE : Si l'ID utilisateur change (rare, mais possible), il est mis à jour dans les commandes.
+
+2. Orders → OrderItem (relation 1:N)
+    Contrainte :
+        ON DELETE CASCADE : Si une commande est supprimée, ses articles doivent être supprimés également.
+        ON UPDATE CASCADE : Si l'ID de la commande change, il est propagé aux articles.
+
+3. Product → OrderItem (relation 1:N)
+    Contrainte :
+        ON DELETE RESTRICT : Empêche la suppression d’un produit si des articles de commande y font référence.
+        ON UPDATE CASCADE : Si l’ID du produit change, il est propagé aux articles de commande.
+
+4. Category → Product (relation 1:N)
+    Contrainte :
+        ON DELETE SET NULL : Si une catégorie est supprimée, les produits sont dissociés de leur catégorie.
+        ON UPDATE CASCADE : Si l'ID de la catégorie change, il est propagé aux produits.
+
+5. Category → Category (parent ↔ sous-catégorie)
+    Contrainte :
+        ON DELETE SET NULL : Si une catégorie parente est supprimée, ses sous-catégories deviennent des catégories racines.
+        ON UPDATE CASCADE : Si l'ID de la catégorie parente change, il est mis à jour dans les sous-catégories.
+
+6. Product → Review (relation 1:N)
+    Contrainte :
+        ON DELETE CASCADE : Si un produit est supprimé, ses avis/commentaires sont supprimés.
+        ON UPDATE CASCADE : Si l’ID du produit change, il est propagé dans les avis.
+
+7. User → Review (relation 1:N)
+    Contrainte :
+        ON DELETE SET NULL : Si un utilisateur est supprimé, ses avis restent pour traçabilité.
+        ON UPDATE CASCADE : Si l'ID utilisateur change, il est propagé aux avis.
+
+8. Orders → Coupon (relation N:1)
+    Contrainte :
+        ON DELETE SET NULL : Si un coupon est supprimé, les commandes qui l'utilisent ne sont pas impactées.
+        ON UPDATE CASCADE : Si l'ID du coupon change, il est propagé dans les commandes.
+----------------------------------------------------------------
+Sécu/Optimisation --- Voir .txt
+-----------------------------------------------------------------
+Requêtes : 
+
+1. Gestion des utilisateurs -----
+-- Inscription
+Verification d'abord de la disponibilité de l'email via une requete SELECT et un COUNT (ou rowCount en PDO)
+INSERT INTO User (name, email, password, role) 
+VALUES ('Pierra', 'pierra@mail.com', $hashedpassword, 'client');
+
+-- Connexion
+SELECT * FROM User 
+WHERE email = 'pierra@mail.com';
+Vérification d'un password dans un second temps par rapport au password hashé
+
+-- Liste des utilisateurs
+SELECT * FROM User 
+ORDER BY created_at DESC;
+
+2. Gestion des produits et catégories -----
+-- Affichage des produits
+SELECT Product.name, Product.price, Category.name AS category_name 
+FROM Product 
+INNER JOIN Category ON Product.category_id = Category.id_category 
+ORDER BY Product.name;
+
+-- Filtrage par catégorie
+SELECT * FROM Product 
+WHERE category_id = 2;
+
+-- Recherche de produit
+SELECT * FROM Product 
+WHERE name LIKE '%keyword%';
+
+-- Produits les mieux notés
+SELECT Product.name, AVG(Review.rating) AS avg_rating 
+FROM Product 
+INNER JOIN Review ON Product.id_product = Review.product_id 
+GROUP BY Product.id_product 
+ORDER BY avg_rating DESC 
+LIMIT 5;
+
+-- Ajout d’un produit
+INSERT INTO Product (name, description, price, category_id, stock) 
+VALUES ('Produit A', 'Description A', 19.99, 1, 100);
+
+3. Gestion des commandes -----
+-- Création d’une commande
+INSERT INTO Orders (user_id, status) 
+VALUES (1, 'en cours de traitement');
+
+-- Ajout de produits à une commande
+INSERT INTO OrderItem (order_id, product_id, quantity, price) 
+VALUES (1, 2, 3, 29.99);
+
+-- Historique des commandes d’un utilisateur
+SELECT Orders.id_order, Orders.created_at, Orders.status, Product.name, OrderItem.quantity 
+FROM Orders 
+INNER JOIN OrderItem ON Orders.id_order = OrderItem.order_id 
+INNER JOIN Product ON OrderItem.product_id = Product.id_product 
+WHERE Orders.user_id = 1;
+
+-- Commandes en attente
+SELECT * FROM Orders 
+WHERE status = 'en cours de traitement';
+
+4. Gestion des évaluations et des commentaires -----
+-- Ajout d’une évaluation
+INSERT INTO Review (user_id, product_id, rating, comment) 
+VALUES (1, 2, 5, 'Excellent produit !');
+
+-- Affichage des commentaires
+SELECT User.name AS user_name, Review.comment, Review.rating, Review.created_at 
+FROM Review 
+INNER JOIN User ON Review.user_id = User.id_user 
+WHERE product_id = 2 
+ORDER BY Review.created_at DESC;
+
+-- Moyenne des notes
+SELECT AVG(rating) AS avg_rating 
+FROM Review 
+WHERE product_id = 2;
+
+5. Gestion des coupons -----
+-- Ajout d’un coupon
+INSERT INTO Coupon (code, discount, expires_at) 
+VALUES ('PROMO10', 10, '2024-12-31');
+
+-- Utilisation d’un coupon
+UPDATE Orders 
+SET coupon_id = 1 
+WHERE id_order = 1;
+
+-- Affichage des coupons expirés
+SELECT * FROM Coupon 
+WHERE expires_at < NOW();
+
+
+
+
+*/

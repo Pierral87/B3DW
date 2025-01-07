@@ -1,0 +1,52 @@
+Sécurisation et optimisation de la base de données
+1. Vérification des relations entre les tables
+
+Toutes les relations entre les tables ont été vérifiées grâce à l'utilisation de clés étrangères. Ces dernières assurent l'intégrité référentielle en empêchant :
+
+    L'insertion de données orphelines (par exemple, une commande sans utilisateur valide).
+    La suppression de données liées (par exemple, la suppression d’un produit sans gérer les commandes associées).
+
+2. Optimisation des performances avec des index
+
+Des index ont été définis sur les champs fréquemment utilisés pour les recherches, les jointures ou les tris afin d'améliorer les performances des requêtes. Voici les index mis en place :
+Index principaux :
+
+    Table Users : email (pour accélérer les recherches et vérifications lors de la connexion).
+    Table Products : name, category_id (pour les recherches par nom ou catégorie sur la page d'accueil).
+    Table Orders : user_id, created_at (pour trier les commandes d’un utilisateur ou afficher un historique chronologique).
+    Table OrderItem : order_id, product_id (pour optimiser les jointures entre commandes et produits).
+
+3. Mesures de sécurisation
+
+Pour protéger la base de données des menaces courantes et garantir l'intégrité des données, plusieurs mesures ont été mises en œuvre :
+A. Contrôle des accès
+
+    Les utilisateurs de la base de données ont des rôles distincts avec des permissions limitées (lecture, écriture, ou administration uniquement).
+        Par exemple, un compte utilisateur dédié à l’application web avec accès en lecture/écriture mais sans privilège pour modifier la structure des tables.
+        Un compte administrateur distinct pour les opérations de maintenance.
+
+B. Validation des données
+
+    Des contraintes ont été définies sur les colonnes pour garantir la validité des données dès leur insertion :
+        NOT NULL sur les champs obligatoires.
+        UNIQUE sur des champs comme email (table Users) pour éviter les doublons.
+
+C. Prévention des injections SQL
+
+    Toutes les interactions avec la base de données doivent être sécurisées via des requêtes préparées ou des ORM (comme PDO avec des requêtes préparées en PHP).
+    Aucune donnée utilisateur n’est insérée directement dans une requête sans validation préalable.
+
+D. Sauvegardes et historisation
+
+    Mise en place d’un plan de sauvegarde automatisé pour prévenir les pertes de données en cas de panne.
+    Archivage des commandes ou données sensibles pour éviter une surcharge des tables principales.
+
+E. Cryptage des données sensibles
+
+    Les mots de passe sont stockés sous forme de hash sécurisé avec des algorithmes comme bcrypt.
+    Les communications entre l’application et la base de données sont sécurisées via SSL/TLS.
+    Certaines autres données sensibles mais que l'on manipulera dans notre application seront quant à elle chiffrées.
+
+F. Protection contre les suppressions accidentelles
+
+    Les clés étrangères avec des contraintes comme ON DELETE SET NULL ou ON DELETE RESTRICT empêchent les suppressions non intentionnelles de données critiques.
